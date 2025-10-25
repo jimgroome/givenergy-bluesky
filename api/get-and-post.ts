@@ -74,8 +74,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await agent.logout();
 
-    // console.log(text);
-
     return res.json(data);
   } catch (error) {
     console.error(error);
