@@ -1,31 +1,19 @@
-# Node.js Hello World
+# Givenergy/Bluesky bot
 
-Simple Node.js + Vercel example that returns a "Hello World" response.
+Posts electricity import/export stats to Bluesky every day 8pm UTC.
 
-## How to Use
+## Installation
 
-You can choose from one of the following two methods to use this repository:
+`npm i && npm i -g vercel`
 
-### One-Click Deploy
+Then copy `.env.example` to `.env` and pop in your `GIVENERGY_API_KEY`, `INVERTER_ID`, `BLUESKY_USERNAME`, and `BLUESKY_PASSWORD`.
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=vercel-examples):
+## Running locally
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/vercel/examples/tree/main/solutions/node-hello-world&project-name=node-hello-world&repository-name=node-hello-world)
+`vercel dev`
 
-### Clone and Deploy
+Project will be set up and served at `http://localhost:3000`. Run the script by visiting `http://localhost:3000/api/get-and-post`.
 
-```bash
-git clone https://github.com/vercel/examples/tree/main/solutions/node-hello-world
-```
+## Cron
 
-Install the Vercel CLI:
-
-```bash
-npm i -g vercel
-```
-
-Then run the app at the root of the repository:
-
-```bash
-vercel dev
-```
+If you deploy this project to Vercel, `vercel.json` is configured to hit `/api/get-and-post` at 8pm UTC.
