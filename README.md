@@ -1,6 +1,6 @@
 # Givenergy/Bluesky bot
 
-Posts electricity import/export stats to Bluesky every day 8pm UTC.
+Posts electricity import/export stats to Bluesky every day at 8pm UTC.
 
 ## Installation
 
