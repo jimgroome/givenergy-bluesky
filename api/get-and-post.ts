@@ -1,82 +1,57 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { BskyAgent } from "@atproto/api";
+import { MeterDataResponse } from "./types";
+import { postToBluesky } from "./bluesky";
 
-interface MeterDataResponse {
-  data: {
-    time: string;
-    today: {
-      solar: number;
-      grid: {
-        import: number;
-        export: number;
-      };
-      battery: {
-        charge: number;
-        discharge: number;
-      };
-      consumption: number;
-      ac_charge: number;
-    };
-    total: {
-      solar: number;
-      grid: {
-        import: number;
-        export: number;
-      };
-      battery: {
-        charge: number;
-        discharge: number;
-      };
-      consumption: number;
-      ac_charge: number;
-    };
-    is_metered: boolean;
-  };
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const response = await fetch(
-      `${process.env.API_URL}/inverter/${process.env.INVERTER_ID}/meter-data/latest`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${process.env.GIVENERGY_API_KEY || ""}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    const data: MeterDataResponse = await response.json();
-
-    const gridImport = data.data.today.grid.import;
-    const gridExport = data.data.today.grid.export;
-
-    const difference = Math.round(Number(gridImport - gridExport) * 100) / 100;
-
-    let text = `Today we imported ${gridImport}kWh and exported ${gridExport}kWh.`;
-    if (gridImport <= gridExport) {
-      text += ` We exported ${Math.abs(
-        difference
-      )}kWh more than we imported! ☀️`;
+const getGivenergyData = async (): Promise<MeterDataResponse> => {
+  const response = await fetch(
+    `${process.env.API_URL}/inverter/${process.env.INVERTER_ID}/meter-data/latest`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${process.env.GIVENERGY_API_KEY || ""}`,
+        "Content-Type": "application/json",
+      },
     }
+  );
 
-    const agent = new BskyAgent({
-      service: process.env.BLUESKY_URL || "",
-    });
-    await agent.login({
-      identifier: process.env.BLUESKY_USERNAME || "",
-      password: process.env.BLUESKY_PASSWORD || "",
-    });
+  return response.json();
+};
 
-    await agent.post({
-      text,
-    });
+const getCalculatedData = (data: MeterDataResponse) => {
+  const gridImport = data.data.today.grid.import;
+  const gridExport = data.data.today.grid.export;
 
-    await agent.logout();
+  const difference = Math.round(Number(gridExport - gridImport) * 100) / 100;
+
+  return {
+    gridImport,
+    gridExport,
+    difference,
+  };
+};
+
+const getText = (data: MeterDataResponse) => {
+  const { gridImport, gridExport, difference } = getCalculatedData(data);
+  let text = `Today we imported ${gridImport}kWh and exported ${gridExport}kWh.`;
+  if (difference > 0) {
+    text += ` We exported ${difference}kWh more than we imported! ☀️`;
+  }
+  return text;
+};
+
+const handler = async (req: VercelRequest, res: VercelResponse) => {
+  try {
+    const data = await getGivenergyData();
+
+    const text = getText(data);
+
+    await postToBluesky(text);
 
     return res.json(data);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
-}
+};
+
+export default handler;
